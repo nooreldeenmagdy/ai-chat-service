@@ -6,26 +6,29 @@ This project implements a minimal AI chat service using FastAPI and Streamlit, i
 
 ```
 ai-chat-service
-├── src
+├── src/
 │   ├── __init__.py
 │   ├── main.py
-│   ├── api
+│   ├── api/
 │   │   ├── __init__.py
 │   │   └── routes.py
-│   ├── services
+│   ├── services/
 │   │   ├── __init__.py
-│   │   └── openai_service.py
-│   └── models
+│   │   ├── openai_service.py
+│   │   └── forecasting_service.py
+│   └── models/
 │       ├── __init__.py
 │       └── chat_models.py
-├── streamlit_app
+├── streamlit_app/
 │   ├── __init__.py
 │   └── app.py
-├── tests
-│   ├── __init__.py
-│   └── test_api.py
 ├── requirements.txt
 ├── .env.example
+├── faq.json
+├── Dockerfile
+├── docker-compose.yml
+├── start.bat
+├── start.sh
 └── README.md
 ```
 
