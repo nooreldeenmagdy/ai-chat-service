@@ -71,18 +71,38 @@ def verify_bearer_token(credentials: Optional[HTTPAuthorizationCredentials] = De
     
     return True
 
-@router.post("/api/chat", response_model=ChatResponse)
+@router.post("/api/chat", response_model=ChatResponse, tags=["Chat"])
 async def chat(
     request: ChatRequest,
     http_request: Request,
     authenticated: bool = Depends(verify_bearer_token)
 ):
     """
-    Send a message to the AI model and receive a response.
+    🤖 Send a message to the AI model and receive a response
     
-    - **session_id**: Unique identifier for the chat session
-    - **message**: User message to send to the AI
-    - **context**: Optional context object for additional information
+    This endpoint processes user messages through an AI model (OpenAI/Azure OpenAI) 
+    and returns intelligent responses with conversation context maintained per session.
+    
+    **Features:**
+    - Conversation history maintained per session
+    - FAQ knowledge base integration (RAG)
+    - Token usage tracking
+    - Response latency monitoring
+    - Rate limiting (10 requests/minute per IP)
+    
+    **Example Usage:**
+    ```json
+    {
+        "session_id": "user-123-chat",
+        "message": "Explain quantum computing in simple terms",
+        "context": {"user_level": "beginner", "topic_preference": "technology"}
+    }
+    ```
+    
+    **Parameters:**
+    - **session_id**: Unique identifier for maintaining conversation context
+    - **message**: Your question or message to the AI (max 2000 characters)
+    - **context**: Optional metadata to enhance AI responses
     """
     try:
         # Apply rate limiting
@@ -118,12 +138,29 @@ async def chat(
             detail="Internal server error"
         )
 
-@router.get("/api/health", response_model=HealthResponse)
+@router.get("/api/health", response_model=HealthResponse, tags=["System"])
 async def health_check():
     """
-    Check the health status of the service.
+    ⚡ Check the health status of the AI Chat Service
     
-    Returns system status, provider information, model details, and uptime.
+    This endpoint provides comprehensive health information including:
+    - Service status and uptime
+    - AI provider and model information
+    - System performance metrics
+    - Configuration validation
+    
+    **Returns:**
+    - Service health status (healthy/unhealthy)
+    - Current AI provider (openai/azure)
+    - Active model name
+    - Service uptime in seconds
+    - Timestamp of health check
+    
+    **Use Cases:**
+    - Monitoring and alerting systems
+    - Load balancer health checks
+    - Service discovery and readiness probes
+    - Debugging connection issues
     """
     try:
         return openai_service.get_health_status()
@@ -134,15 +171,34 @@ async def health_check():
             detail="Service unhealthy"
         )
 
-@router.delete("/api/chat/{session_id}")
+@router.delete("/api/chat/{session_id}", tags=["Sessions"])
 async def clear_session(
     session_id: str,
     authenticated: bool = Depends(verify_bearer_token)
 ):
     """
-    Clear a specific chat session and its history.
+    🗑️ Clear a specific chat session and its conversation history
     
-    - **session_id**: The session ID to clear
+    This endpoint removes all conversation history for a specific session ID,
+    effectively resetting the conversation context for that session.
+    
+    **Example Usage:**
+    ```
+    DELETE /api/chat/user-123-chat
+    ```
+    
+    **Parameters:**
+    - **session_id**: The unique session identifier to clear (e.g., "user-123-chat")
+    
+    **Response:**
+    - Success: `{"message": "Session {session_id} cleared successfully"}`
+    - Not Found: `404` if session doesn't exist
+    
+    **Use Cases:**
+    - Reset conversation context
+    - Privacy compliance (data deletion)
+    - Start fresh conversation
+    - Memory management for long-running sessions
     """
     try:
         success = openai_service.clear_session(session_id)
@@ -160,10 +216,28 @@ async def clear_session(
             detail="Error clearing session"
         )
 
-@router.get("/api/sessions")
+@router.get("/api/sessions", tags=["Sessions"])
 async def list_sessions(authenticated: bool = Depends(verify_bearer_token)):
     """
-    List all active chat sessions.
+    📋 List all active chat sessions
+    
+    This endpoint returns information about all currently active chat sessions
+    in the system, useful for monitoring and management purposes.
+    
+    **Returns:**
+    ```json
+    {
+        "active_sessions": ["user-123-chat", "guest-456-session", "admin-789"],
+        "total_count": 3
+    }
+    ```
+    
+    **Use Cases:**
+    - Monitor active users
+    - System administration
+    - Session management
+    - Analytics and reporting
+    - Resource usage tracking
     """
     try:
         sessions = list(openai_service.sessions.keys())
@@ -178,18 +252,47 @@ async def list_sessions(authenticated: bool = Depends(verify_bearer_token)):
             detail="Error retrieving sessions"
         )
 
-@router.post("/api/forecast", response_model=ForecastResponse)
+@router.post("/api/forecast", response_model=ForecastResponse, tags=["Forecasting"])
 async def forecast(
     request: ForecastRequest,
     authenticated: bool = Depends(verify_bearer_token)
 ):
     """
-    Generate time series forecasts using ARIMA model.
+    📈 Generate time series forecasts using advanced ARIMA modeling
     
-    - **data**: List of numerical values for time series
-    - **dates**: Optional list of date strings
-    - **steps**: Number of forecast steps (default: 5)
-    - **confidence_level**: Confidence level for prediction intervals (default: 0.95)
+    This endpoint provides sophisticated time series forecasting capabilities using
+    ARIMA (AutoRegressive Integrated Moving Average) models with automatic parameter
+    selection and comprehensive performance metrics.
+    
+    **Features:**
+    - Automatic ARIMA model selection (optimal p,d,q parameters)
+    - Confidence intervals for predictions
+    - Performance metrics (MAE, RMSE, etc.)
+    - Support for date-indexed time series
+    - Model quality assessment (AIC scores)
+    
+    **Example Request:**
+    ```json
+    {
+        "data": [10.5, 12.3, 13.8, 15.2, 14.9, 16.1, 18.4, 20.2, 19.8, 21.5, 23.1, 24.7, 22.9, 25.3, 27.2],
+        "dates": ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"],
+        "steps": 5,
+        "confidence_level": 0.95
+    }
+    ```
+    
+    **Parameters:**
+    - **data**: Historical time series values (minimum 10 points required)
+    - **dates**: Optional date strings corresponding to data points
+    - **steps**: Number of future periods to forecast (1-30)
+    - **confidence_level**: Statistical confidence level (0.8-0.99)
+    
+    **Use Cases:**
+    - Sales forecasting
+    - Demand planning
+    - Financial projections
+    - Resource capacity planning
+    - Trend analysis
     """
     try:
         if len(request.data) < 10:
@@ -236,15 +339,59 @@ async def forecast(
             detail="Forecasting service error"
         )
 
-@router.post("/api/forecast/validate")
+@router.post("/api/forecast/validate", tags=["Forecasting"])
 async def validate_time_series(
     request: dict,
     authenticated: bool = Depends(verify_bearer_token)
 ):
     """
-    Validate time series data and get recommendations.
+    ✅ Validate time series data and get expert recommendations
     
-    - **data**: List of numerical values to validate
+    This endpoint analyzes your time series data and provides detailed validation
+    results with actionable recommendations for improving forecast quality.
+    
+    **Analysis Includes:**
+    - Data quality assessment
+    - Trend and seasonality detection
+    - Outlier identification
+    - Stationarity testing
+    - Recommended preprocessing steps
+    - Forecast readiness score
+    
+    **Example Request:**
+    ```json
+    {
+        "data": [10.5, 12.3, 13.8, 15.2, 14.9, 16.1, 18.4, 20.2, 19.8, 21.5]
+    }
+    ```
+    
+    **Example Response:**
+    ```json
+    {
+        "is_valid": true,
+        "data_quality_score": 0.85,
+        "recommendations": [
+            "Data looks suitable for forecasting",
+            "Consider adding more historical data for better accuracy"
+        ],
+        "issues": [],
+        "statistics": {
+            "mean": 16.38,
+            "std": 4.12,
+            "trend": "increasing",
+            "seasonality": "none_detected"
+        }
+    }
+    ```
+    
+    **Parameters:**
+    - **data**: Array of numerical values to validate and analyze
+    
+    **Use Cases:**
+    - Pre-forecast data validation
+    - Data quality assessment
+    - Identify data preprocessing needs
+    - Forecast feasibility analysis
     """
     try:
         data = request.get("data", [])

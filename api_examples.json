@@ -1,0 +1,56 @@
+{
+  "chat_examples": {
+    "basic_question": {
+      "session_id": "demo-session-001",
+      "message": "What is artificial intelligence?",
+      "context": null
+    },
+    "technical_question": {
+      "session_id": "tech-user-456",
+      "message": "How does machine learning differ from deep learning?",
+      "context": {
+        "user_level": "intermediate",
+        "topic_preference": "technical",
+        "language": "en"
+      }
+    },
+    "conversation_followup": {
+      "session_id": "demo-session-001",
+      "message": "Can you give me some practical examples?",
+      "context": {
+        "previous_topic": "artificial_intelligence",
+        "conversation_depth": "followup"
+      }
+    }
+  },
+  "forecast_examples": {
+    "sales_data": {
+      "data": [100, 120, 115, 130, 125, 140, 135, 150, 145, 160, 155, 170, 165, 180, 175],
+      "dates": ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05", "2024-01-06", "2024-01-07", "2024-01-08", "2024-01-09", "2024-01-10", "2024-01-11", "2024-01-12", "2024-01-13", "2024-01-14", "2024-01-15"],
+      "steps": 5,
+      "confidence_level": 0.95
+    },
+    "temperature_data": {
+      "data": [22.5, 23.1, 21.8, 24.2, 25.0, 23.7, 22.9, 24.8, 26.1, 25.3, 23.4, 22.0, 21.5, 23.8, 24.9],
+      "steps": 3,
+      "confidence_level": 0.90
+    },
+    "stock_prices": {
+      "data": [150.25, 152.80, 148.90, 155.30, 157.40, 153.20, 159.10, 161.75, 158.50, 163.20, 165.80, 162.40, 167.90, 170.30, 168.75],
+      "dates": ["2024-08-01", "2024-08-02", "2024-08-03", "2024-08-04", "2024-08-05", "2024-08-06", "2024-08-07", "2024-08-08", "2024-08-09", "2024-08-10", "2024-08-11", "2024-08-12", "2024-08-13", "2024-08-14", "2024-08-15"],
+      "steps": 7,
+      "confidence_level": 0.95
+    }
+  },
+  "validation_examples": {
+    "good_data": {
+      "data": [10.5, 12.3, 13.8, 15.2, 14.9, 16.1, 18.4, 20.2, 19.8, 21.5, 23.1, 24.7, 22.9, 25.3, 27.2]
+    },
+    "insufficient_data": {
+      "data": [10, 12, 15]
+    },
+    "noisy_data": {
+      "data": [10, 12, 100, 15, 14, 200, 18, 20, 5, 21, 23, 1000, 22, 25, 27]
+    }
+  }
+}
