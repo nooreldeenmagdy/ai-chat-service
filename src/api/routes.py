@@ -209,6 +209,9 @@ async def clear_session(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Session not found"
             )
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404)
+        raise
     except Exception as e:
         logger.error(f"Error clearing session {session_id}: {e}")
         raise HTTPException(
