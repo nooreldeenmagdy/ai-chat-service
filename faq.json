@@ -1,0 +1,94 @@
+{
+  "faqs": [
+    {
+      "id": 1,
+      "question": "What is artificial intelligence?",
+      "answer": "Artificial Intelligence (AI) is a branch of computer science that aims to create machines capable of performing tasks that typically require human intelligence, such as learning, reasoning, and problem-solving."
+    },
+    {
+      "id": 2,
+      "question": "How does machine learning work?",
+      "answer": "Machine learning is a subset of AI that enables computers to learn and improve from data without being explicitly programmed. It uses algorithms to identify patterns in data and make predictions or decisions."
+    },
+    {
+      "id": 3,
+      "question": "What is the difference between AI and ML?",
+      "answer": "AI is the broader concept of machines being able to carry out tasks in a smart way, while ML is a specific application of AI that focuses on the idea of giving machines access to data and letting them learn for themselves."
+    },
+    {
+      "id": 4,
+      "question": "What are neural networks?",
+      "answer": "Neural networks are computing systems inspired by biological neural networks. They consist of interconnected nodes (neurons) that process information and can learn to recognize patterns and make decisions."
+    },
+    {
+      "id": 5,
+      "question": "What is deep learning?",
+      "answer": "Deep learning is a subset of machine learning that uses neural networks with multiple layers (deep neural networks) to model and understand complex patterns in data."
+    },
+    {
+      "id": 6,
+      "question": "How do chatbots work?",
+      "answer": "Chatbots use natural language processing (NLP) and machine learning algorithms to understand user input, process the information, and generate appropriate responses in human-like conversation."
+    },
+    {
+      "id": 7,
+      "question": "What is natural language processing?",
+      "answer": "Natural Language Processing (NLP) is a branch of AI that helps computers understand, interpret, and manipulate human language. It bridges the gap between human communication and computer understanding."
+    },
+    {
+      "id": 8,
+      "question": "What are the applications of AI?",
+      "answer": "AI has numerous applications including healthcare diagnosis, autonomous vehicles, recommendation systems, fraud detection, virtual assistants, image recognition, and predictive analytics."
+    },
+    {
+      "id": 9,
+      "question": "What is computer vision?",
+      "answer": "Computer vision is a field of AI that enables computers to interpret and understand visual information from the world, such as images and videos, similar to how humans use their eyes."
+    },
+    {
+      "id": 10,
+      "question": "How does reinforcement learning work?",
+      "answer": "Reinforcement learning is a type of machine learning where an agent learns to make decisions by performing actions in an environment and receiving rewards or penalties based on the outcomes."
+    },
+    {
+      "id": 11,
+      "question": "What is supervised learning?",
+      "answer": "Supervised learning is a machine learning approach where algorithms learn from labeled training data to make predictions or classifications on new, unseen data."
+    },
+    {
+      "id": 12,
+      "question": "What is unsupervised learning?",
+      "answer": "Unsupervised learning is a machine learning technique that finds patterns in data without labeled examples, often used for clustering, association rules, and dimensionality reduction."
+    },
+    {
+      "id": 13,
+      "question": "What are large language models?",
+      "answer": "Large Language Models (LLMs) are AI models trained on vast amounts of text data that can understand and generate human-like text, capable of tasks like conversation, writing, and code generation."
+    },
+    {
+      "id": 14,
+      "question": "What is the Turing Test?",
+      "answer": "The Turing Test is a test proposed by Alan Turing to determine if a machine can exhibit intelligent behavior indistinguishable from that of a human in conversation."
+    },
+    {
+      "id": 15,
+      "question": "What are the ethical concerns with AI?",
+      "answer": "AI ethical concerns include bias in algorithms, privacy issues, job displacement, transparency in decision-making, accountability, and the potential misuse of AI technology."
+    },
+    {
+      "id": 16,
+      "question": "What is transfer learning?",
+      "answer": "Transfer learning is a machine learning technique where a model developed for one task is reused as the starting point for a model on a related task, improving efficiency and performance."
+    },
+    {
+      "id": 17,
+      "question": "How do recommendation systems work?",
+      "answer": "Recommendation systems use algorithms to analyze user behavior, preferences, and item characteristics to suggest relevant products, content, or services to users."
+    },
+    {
+      "id": 18,
+      "question": "What is explainable AI?",
+      "answer": "Explainable AI (XAI) refers to AI systems that provide clear, understandable explanations for their decisions and predictions, making AI more transparent and trustworthy."
+    }
+  ]
+}

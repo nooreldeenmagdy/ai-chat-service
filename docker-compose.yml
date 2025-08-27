@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  fastapi:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - PROVIDER=openai
+      - MODEL_NAME=gpt-4o
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - FASTAPI_PORT=8000
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./faq.json:/app/faq.json:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  streamlit:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://fastapi:8000
+    command: ["streamlit", "run", "streamlit_app/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    depends_on:
+      - fastapi
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge
