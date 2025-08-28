@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
-BEARER_TOKEN = os.getenv("BEARER_TOKEN", "my-secure-token-123")
+BEARER_TOKEN = os.getenv("BEARER_TOKEN")
 
 class ChatUI:
     def __init__(self):
@@ -68,11 +68,11 @@ def main():
         
         # Authentication status
         st.subheader("🔐 Authentication")
-        if BEARER_TOKEN:
+        if BEARER_TOKEN and BEARER_TOKEN != "your_bearer_token_here":
             st.success("✅ Bearer token configured")
-            st.text(f"Token: {BEARER_TOKEN[:10]}...")
+            st.text("Token: ••••••••••")  # Hide token for security
         else:
-            st.warning("⚠️ No bearer token found")
+            st.warning("⚠️ No bearer token configured")
             
             # Allow manual token input
             manual_token = st.text_input("Enter Bearer Token:", type="password", key="manual_token")
