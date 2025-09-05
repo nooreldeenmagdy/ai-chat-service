@@ -1,15 +1,20 @@
 # AI Chat Service
 
-A comprehensive AI-powered chat service with RAG (Retrieval-Augmented Generation) capabilities, time series forecasting, and interactive web interface. Built with FastAPI, OpenAI/Azure OpenAI integration, and Streamlit.
+A comprehensive AI-powered chat service with RAG (Retrieval-Augmented Generation) capabilities, SQL chatbot with natural language to database query conversion, time series forecasting, and interactive web interface. Built with FastAPI, OpenAI/Azure OpenAI integration, and Streamlit.
 
 ## Features
 
 - **AI Chat Service** - OpenAI/Azure OpenAI integration with conversation memory
 - **RAG System** - FAQ-based knowledge retrieval using TF-IDF embeddings  
+- **SQL Chatbot** - Natural language to SQL query conversion with database validation
+- **Dual-Mode Chat** - Intelligent switching between RAG and SQL modes based on query analysis
+- **Asset Management Database** - Comprehensive SQLite database with customers, vendors, assets, and transactions
+- **Real-time Token Tracking** - Accurate OpenAI API token usage monitoring across all operations
+- **Database Validation** - SQL queries are validated by execution against SQLite database
 - **Time Series Forecasting** - ARIMA-based predictions with confidence intervals
 - **Authentication** - Optional Bearer token security
 - **Rate Limiting** - Built-in protection (10 requests/minute per IP)
-- **Web Interface** - Interactive Streamlit chat application
+- **Web Interface** - Interactive Streamlit chat application with mode switching
 - **API Documentation** - Interactive Swagger UI at `/docs`
 - **Comprehensive Testing** - Unit and integration tests with 90%+ coverage
 - **Docker Support** - Containerized deployment ready
@@ -24,6 +29,8 @@ ai-chat-service/
 │   ├── api/routes.py           # REST API endpoints
 │   ├── services/               # Business logic services
 │   │   ├── openai_service.py   # OpenAI integration & RAG
+│   │   ├── sql_chatbot_service.py  # Natural language to SQL conversion
+│   │   ├── database_service.py # SQLite database management
 │   │   └── forecasting_service.py  # Time series forecasting
 │   └── models/chat_models.py   # Pydantic data models
 ├── streamlit_app/           # Web interface
@@ -31,7 +38,9 @@ ai-chat-service/
 ├── tests/                   # Test suite
 │   ├── test_rag_service.py     # RAG service unit tests
 │   ├── test_chat_api.py        # API integration tests
+│   ├── test_sql_chatbot.py     # SQL chatbot tests
 │   └── README.md               # Testing documentation
+├── asset_management.db      # SQLite database with sample data
 ├── faq.json                 # Knowledge base for RAG
 ├── requirements.txt         # Python dependencies
 ├── Dockerfile              # Container configuration
@@ -101,6 +110,8 @@ STREAMLIT_PORT=8501
 
 ### Chat & AI
 - `POST /api/chat` - Send message to AI with RAG enhancement
+- `POST /api/sql-chat` - Convert natural language to SQL queries with database validation
+- `POST /api/dual-mode-chat` - Unified endpoint with intelligent mode switching
 - `GET /api/health` - Service health and status
 - `DELETE /api/chat/{session_id}` - Clear conversation history
 - `GET /api/sessions` - List active chat sessions
@@ -123,6 +134,23 @@ curl -X POST "http://localhost:8000/api/chat" \
   -d '{
     "session_id": "user-123",
     "message": "What is artificial intelligence?"
+  }'
+
+# SQL Chat - Natural language to SQL
+curl -X POST "http://localhost:8000/api/sql-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "sql-user-123",
+    "message": "Show me all products with stock levels below 50"
+  }'
+
+# Dual-mode chat with auto-detection
+curl -X POST "http://localhost:8000/api/dual-mode-chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "dual-user-123",
+    "message": "Find customers in New York",
+    "mode": "sql"
   }'
 
 # With authentication
@@ -148,6 +176,50 @@ curl -X POST "http://localhost:8000/api/forecast" \
     "confidence_level": 0.95  }'
 ```
 
+## SQL Chatbot Features
+
+### Database Schema
+The SQL chatbot has built-in knowledge of a comprehensive asset management database with these tables:
+
+- **Customers** - Customer information for sales orders (CustomerId, CustomerCode, CustomerName, Email, Phone, BillingAddress, etc.)
+- **Vendors** - Vendor/supplier information for asset purchases (VendorId, VendorCode, VendorName, Contact details, etc.)
+- **Sites** - Physical sites/locations where assets are deployed (SiteId, SiteCode, SiteName, Address, TimeZone, etc.)
+- **Locations** - Specific locations within sites for asset placement (LocationId, SiteId, LocationCode, LocationName, etc.)
+- **Items** - Item catalog/master data for purchase and sales orders (ItemId, ItemCode, ItemName, Category, UnitOfMeasure, etc.)
+- **Assets** - Physical assets tracked in the system (AssetId, AssetTag, AssetName, SiteId, SerialNumber, Category, Status, Cost, etc.)
+- **Bills** - Accounts payable - bills from vendors (BillId, VendorId, BillNumber, BillDate, DueDate, TotalAmount, etc.)
+- **PurchaseOrders** - Purchase orders for procurement (POId, PONumber, VendorId, PODate, Status, SiteId, etc.)
+- **PurchaseOrderLines** - Line items for purchase orders (POLineId, POId, ItemId, Quantity, UnitPrice, etc.)
+- **SalesOrders** - Sales orders from customers (SOId, SONumber, CustomerId, SODate, Status, SiteId, etc.)
+- **SalesOrderLines** - Line items for sales orders (SOLineId, SOId, ItemId, Quantity, UnitPrice, etc.)
+- **AssetTransactions** - Asset movement/adjustment/disposal history (AssetTxnId, AssetId, TxnType, FromLocation, ToLocation, etc.)
+
+### Natural Language Examples
+The SQL chatbot can understand queries like:
+
+- "Show me all active assets at each site"
+- "Find customers who placed sales orders last month"  
+- "List the most expensive assets by cost"
+- "Get all vendors from New York"
+- "Show recent purchase orders with vendor details"
+- "Find assets that were moved between locations"
+- "What are the total sales by customer this year"
+- "Show bills that are overdue"
+
+### Advanced Features
+- **Two-Step LLM Workflow** - First understands user intent and selects relevant tables, then generates optimized SQL
+- **SQLite Database Validation** - All generated queries are validated by actual execution against the database
+- **Token Usage Tracking** - Real-time monitoring of OpenAI API token consumption across all operations
+- **Intelligent Mode Detection** - Dual-mode endpoint automatically determines whether to use RAG or SQL based on query content
+- **Query Result Explanation** - Converts database results back into natural language responses
+
+### Safety & Validation  
+- 3-attempt retry mechanism for query generation and validation
+- SQL validation prevents destructive operations (DROP, DELETE, UPDATE, ALTER)
+- Query safety checks before execution against SQLite database
+- Natural language explanation of results with actual data analysis
+- Comprehensive error handling and logging
+
 ## Testing
 
 Run the comprehensive test suite:
@@ -166,7 +238,8 @@ python -m pytest tests/test_chat_api.py -v       # API tests
 
 **Test Coverage:**
 - RAG Service: 23 tests (FAQ loading, embeddings, similarity search)
-- Chat API: 23 tests (endpoints, validation, auth, rate limiting)  
+- Chat API: 23 tests (endpoints, validation, auth, rate limiting)
+- SQL Chatbot: 25 tests (query generation, validation, dual-mode)  
 - Integration: End-to-end workflow testing
 - Error Handling: Comprehensive exception testing
 

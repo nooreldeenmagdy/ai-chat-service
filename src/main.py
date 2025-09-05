@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from src.api.routes import router as api_router
+from src.services.database_service import database_service
 
 # Load environment variables
 load_dotenv()
@@ -21,51 +22,84 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     logger.info("Starting AI Chat Service...")
-    # Startup logic here if needed
+    # Initialize SQLite database on startup
+    try:
+        logger.info("Initializing SQLite database...")
+        # The database_service is already initialized when imported, so just log success
+        logger.info("SQLite database initialized successfully with sample data")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        raise
     yield
     # Cleanup logic here if needed
     logger.info("Shutting down AI Chat Service...")
 
 # Create FastAPI app with enhanced documentation
 app = FastAPI(
-    title="🤖 AI Chat Service API",
+    title="AI Chat Service API",
     description="""
-    ## Advanced AI Chat Service with RAG and Forecasting
+    ## Advanced AI Chat Service with RAG, SQL Chatbot, and Forecasting
 
     A comprehensive AI-powered chat service featuring:
     
-    ### 🚀 **Core Features**
+    ### Core Features
     * **Intelligent Conversations** - Powered by OpenAI/Azure OpenAI models
     * **RAG Integration** - Context-aware responses using FAQ knowledge base
+    * **SQL Chatbot** - Natural language to SQL query conversion with validation
+    * **Dual-Mode Chat** - Intelligent switching between RAG and SQL modes
     * **Session Management** - Persistent conversation history per user
     * **Time Series Forecasting** - ARIMA-based predictions with confidence intervals
     * **Rate Limiting** - Built-in protection (10 requests/minute per IP)
     * **Authentication** - Optional Bearer token security
     
-    ### 🛠 **Technical Stack**
+    ### SQL Chatbot Capabilities
+    * **Asset Management Database** - Comprehensive schema including customers, vendors, assets, sales orders
+    * **Two-Step LLM Workflow** - Goal understanding followed by SQL generation
+    * **SQLite Database Validation** - Queries are validated by actual execution
+    * **Safety Features** - Prevents destructive operations (DROP, DELETE, UPDATE)
+    * **Retry Mechanism** - Up to 3 attempts for query validation
+    * **Natural Language Explanation** - Converts results back to human-readable responses
+    * **Token Tracking** - Real-time OpenAI API token usage monitoring
+    
+    ### Database Schema
+    The SQL chatbot has knowledge of these tables:
+    - **Customers** - Customer information for sales orders
+    - **Vendors** - Vendor/supplier information for purchases
+    - **Sites** - Physical locations where assets are deployed
+    - **Locations** - Specific locations within sites
+    - **Items** - Item catalog for purchases and sales
+    - **Assets** - Physical assets with tracking and status
+    - **Bills** - Accounts payable from vendors
+    - **PurchaseOrders/Lines** - Procurement workflow
+    - **SalesOrders/Lines** - Sales workflow
+    - **AssetTransactions** - Asset movement history
+    
+    ### Technical Stack
     * **FastAPI** - High-performance async API framework
     * **OpenAI/Azure OpenAI** - State-of-the-art language models
+    * **SQLite Database** - Asset management data storage
     * **Streamlit** - Interactive web interface
     * **Docker** - Containerized deployment
     * **ARIMA** - Statistical forecasting models
     
-    ### 📚 **Quick Start**
+    ### Quick Start
     1. **Health Check**: `GET /api/health` - Verify service status
-    2. **Start Chatting**: `POST /api/chat` - Send your first message
-    3. **Forecast Data**: `POST /api/forecast` - Generate predictions
-    4. **Validate Data**: `POST /api/forecast/validate` - Check data quality
+    2. **Start Chatting**: `POST /api/chat` - Send your first message (RAG mode)
+    3. **Database Queries**: `POST /api/sql-chat` - Natural language to SQL
+    4. **Auto-Mode**: `POST /api/dual-mode-chat` - Let AI choose the best mode
+    5. **Forecast Data**: `POST /api/forecast` - Generate predictions
     
-    ### 🔐 **Authentication**
+    ### Authentication
     Optional Bearer token authentication can be enabled via `BEARER_TOKEN` environment variable.
     
-    ### 📖 **Documentation**
+    ### Documentation
     * **Interactive Docs**: Available at `/docs` (this page)
     * **ReDoc**: Alternative docs at `/redoc`
     * **OpenAPI JSON**: Schema available at `/openapi.json`
     
     ---
     
-    **Ready to explore? Try the endpoints below! 🚀**
+    **Ready to explore? Try the endpoints below!**
     """,
     version="1.0.0",
     lifespan=lifespan,
@@ -91,19 +125,23 @@ app = FastAPI(
     tags_metadata=[
         {
             "name": "Chat",
-            "description": "💬 Intelligent conversation endpoints with AI models"
+            "description": "Intelligent conversation endpoints with AI models and RAG capabilities"
+        },
+        {
+            "name": "SQL", 
+            "description": "Natural language to SQL query conversion with database validation"
         },
         {
             "name": "Forecasting", 
-            "description": "📈 Time series forecasting and data validation"
+            "description": "Time series forecasting and data validation"
         },
         {
             "name": "System",
-            "description": "⚡ Health checks and system management"
+            "description": "Health checks and system management"
         },
         {
             "name": "Sessions",
-            "description": "👥 Session and conversation management"
+            "description": "Session and conversation management"
         }
     ]
 )

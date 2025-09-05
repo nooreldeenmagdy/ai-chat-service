@@ -257,6 +257,50 @@ class OpenAIService:
             temperature=0.7
         )
     
+    async def generate_response(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.7) -> tuple[str, dict]:
+        """Generate a response from a simple text prompt and return both response and token usage"""
+        try:
+            messages = [{"role": "user", "content": prompt}]
+            
+            if self.provider == 'azure':
+                response = await self._call_azure_openai_simple(messages, max_tokens, temperature)
+            else:
+                response = await self._call_openai_simple(messages, max_tokens, temperature)
+            
+            # Extract token usage
+            token_usage = {
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens
+            }
+            
+            return response.choices[0].message.content.strip(), token_usage
+            
+        except Exception as e:
+            logger.error(f"Error generating response: {e}")
+            raise AIServiceError(f"Failed to generate response: {str(e)}")
+    
+    async def _call_openai_simple(self, messages: List[dict], max_tokens: int, temperature: float):
+        """Call OpenAI API with custom parameters"""
+        return await asyncio.to_thread(
+            self.client.chat.completions.create,
+            model=self.model,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
+    
+    async def _call_azure_openai_simple(self, messages: List[dict], max_tokens: int, temperature: float):
+        """Call Azure OpenAI API with custom parameters"""
+        deployment_name = os.getenv('AZURE_OPENAI_DEPLOYMENT', self.model)
+        return await asyncio.to_thread(
+            self.client.chat.completions.create,
+            model=deployment_name,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
+    
     def get_health_status(self) -> HealthResponse:
         """Get service health status"""
         uptime = (datetime.now() - self.start_time).total_seconds()

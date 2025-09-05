@@ -8,10 +8,12 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from src.models.chat_models import (
     ChatRequest, ChatResponse, HealthResponse, 
-    ForecastRequest, ForecastResponse
+    ForecastRequest, ForecastResponse,
+    SqlQueryRequest, SqlQueryResponse, ChatModeRequest, ChatModeResponse
 )
 from src.services.openai_service import openai_service, AIServiceError
 from src.services.forecasting_service import forecasting_service
+from src.services.sql_chatbot_service import sql_chatbot_service
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -412,4 +414,199 @@ async def validate_time_series(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Validation service error"
+        )
+
+@router.post("/api/sql-chat", response_model=SqlQueryResponse, tags=["SQL Chat"])
+async def sql_chat(
+    request: SqlQueryRequest,
+    http_request: Request,
+    authenticated: bool = Depends(verify_bearer_token)
+):
+    """
+    🗃️ SQL Chatbot - Convert natural language to SQL queries
+    
+    This endpoint processes natural language queries and converts them to SQL statements
+    using a two-step LLM approach with validation and retry mechanism.
+    
+    **Features:**
+    - Two-step workflow: goal understanding + SQL generation
+    - 3-attempt retry mechanism with validation
+    - Database schema awareness for inventory system
+    - Natural language explanation of results
+    - Query safety validation (prevents destructive operations)
+    
+    **Example Usage:**
+    ```json
+    {
+        "session_id": "sql-session-123",
+        "message": "Show me all products with low stock levels",
+        "context": {"database": "inventory", "user_role": "analyst"}
+    }
+    ```
+    
+    **Database Schema:**
+    The system has knowledge of:
+    - products (inventory, pricing, supplier info)
+    - categories (product organization)
+    - suppliers (vendor information)
+    - orders (customer orders)
+    - order_items (order line items)
+    - customers (customer information)
+    
+    **Response includes:**
+    - Natural language explanation
+    - Generated SQL query
+    - Validation attempts made
+    - Referenced database tables
+    """
+    try:
+        # Apply rate limiting
+        check_rate_limit(http_request)
+        
+        if not request.message.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Message cannot be empty"
+            )
+        
+        if len(request.message) > 2000:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Message too long (max 2000 characters)"
+            )
+        
+        response = await sql_chatbot_service.process_sql_query(request)
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in SQL chat endpoint: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing SQL query: {str(e)}"
+        )
+
+@router.post("/api/dual-mode-chat", response_model=ChatModeResponse, tags=["Dual Mode Chat"])
+async def dual_mode_chat(
+    request: ChatModeRequest,
+    http_request: Request,
+    authenticated: bool = Depends(verify_bearer_token)
+):
+    """
+    🔄 Dual-Mode Chat - Switch between RAG and SQL chatbot modes
+    
+    This endpoint provides a unified interface that can switch between:
+    - **RAG Mode**: Knowledge-based chat with FAQ retrieval
+    - **SQL Mode**: Natural language to SQL query conversion
+    
+    **Mode Selection:**
+    - `"rag"` - Use the original RAG-based chatbot for general knowledge queries
+    - `"sql"` - Use the SQL chatbot for database queries
+    
+    **Example Usage:**
+    ```json
+    {
+        "session_id": "dual-session-123",
+        "message": "What is artificial intelligence?",
+        "mode": "rag"
+    }
+    ```
+    
+    ```json
+    {
+        "session_id": "dual-session-123", 
+        "message": "Show me products with low stock",
+        "mode": "sql"
+    }
+    ```
+    
+    **Response Format:**
+    The response adapts based on the selected mode:
+    - RAG mode includes: `relevant_faqs`
+    - SQL mode includes: `sql_query`, `query_results`, `table_info`, `validation_attempts`
+    """
+    try:
+        # Apply rate limiting
+        check_rate_limit(http_request)
+        
+        if not request.message.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Message cannot be empty"
+            )
+        
+        if len(request.message) > 2000:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Message too long (max 2000 characters)"
+            )
+        
+        start_time = datetime.now()
+        
+        if request.mode == "sql":
+            # Use SQL chatbot service
+            sql_request = SqlQueryRequest(
+                session_id=request.session_id,
+                message=request.message,
+                context=request.context
+            )
+            sql_response = await sql_chatbot_service.process_sql_query(sql_request)
+            
+            # Convert to unified response format
+            response = ChatModeResponse(
+                response=sql_response.natural_language_answer,
+                mode="sql",
+                session_id=request.session_id,
+                sql_query=sql_response.sql_query,
+                query_results=sql_response.query_results,
+                table_info=sql_response.table_info,
+                validation_attempts=sql_response.validation_attempts,
+                relevant_faqs=None,
+                latency_ms=sql_response.latency_ms,
+                token_usage=sql_response.token_usage,  # Use actual token usage from SQL service!
+                timestamp=sql_response.timestamp,
+                status=sql_response.status  # Copy the status field!
+            )
+            
+        else:  # RAG mode
+            # Use existing RAG service
+            rag_request = ChatRequest(
+                session_id=request.session_id,
+                message=request.message,
+                context=request.context
+            )
+            rag_response = await openai_service.send_message(rag_request)
+            
+            # Convert to unified response format
+            response = ChatModeResponse(
+                response=rag_response.response,
+                mode="rag",
+                session_id=request.session_id,
+                sql_query=None,
+                query_results=None,
+                table_info=None,
+                validation_attempts=None,
+                relevant_faqs=rag_response.relevant_faqs,
+                latency_ms=rag_response.latency_ms,
+                token_usage=rag_response.token_usage,
+                timestamp=rag_response.timestamp,
+                status="success"  # RAG queries are generally successful
+            )
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except AIServiceError as e:
+        logger.error(f"AI service error in dual-mode chat: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in dual-mode chat endpoint: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error in dual-mode chat: {str(e)}"
         )

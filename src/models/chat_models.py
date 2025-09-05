@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union, Literal
 from datetime import datetime
 
 class ChatRequest(BaseModel):
@@ -235,3 +235,147 @@ class ForecastResponse(BaseModel):
         ...,
         description="Metadata about the forecasting process"
     )
+
+class SqlQueryRequest(BaseModel):
+    session_id: str = Field(
+        ...,
+        example="sql-session-123",
+        description="Unique identifier for the SQL chat session"
+    )
+    message: str = Field(
+        ...,
+        example="Show me all products with low stock levels",
+        description="Natural language query to convert to SQL"
+    )
+    context: Optional[Dict[str, Any]] = Field(
+        None,
+        example={"database": "inventory", "user_role": "analyst"},
+        description="Optional context for the SQL query"
+    )
+
+class SqlQueryResponse(BaseModel):
+    natural_language_answer: str = Field(
+        ...,
+        example="You have 1,245 assets in your inventory.",
+        description="Natural language explanation of the query results"
+    )
+    sql_query: str = Field(
+        ...,
+        example="SELECT COUNT(*) AS AssetCount FROM Assets WHERE Status <> 'Disposed';",
+        description="Generated SQL query that would be executed"
+    )
+    token_usage: Dict[str, int] = Field(
+        ...,
+        example={"prompt_tokens": 85, "completion_tokens": 45, "total_tokens": 130},
+        description="Token usage statistics for the API call"
+    )
+    latency_ms: int = Field(
+        ...,
+        example=850,
+        description="Response time in milliseconds (integer)"
+    )
+    provider: str = Field(
+        ...,
+        example="openai",
+        description="AI service provider used"
+    )
+    model: str = Field(
+        ...,
+        example="gpt-4o",
+        description="AI model used for generation"
+    )
+    status: str = Field(
+        ...,
+        example="ok",
+        description="Status of the query generation"
+    )
+    
+    # Keep some internal fields for compatibility but don't expose in API
+    session_id: Optional[str] = Field(None, description="Internal session tracking")
+    query_results: Optional[List[Dict[str, Any]]] = Field(None, description="Internal query results")
+    table_info: Optional[List[str]] = Field(None, description="Internal table tracking")
+    validation_attempts: Optional[int] = Field(None, description="Internal validation tracking")
+    timestamp: Optional[datetime] = Field(None, description="Internal timestamp")
+
+class ChatModeRequest(BaseModel):
+    session_id: str = Field(
+        ...,
+        example="multi-mode-session-123",
+        description="Unique identifier for the chat session"
+    )
+    message: str = Field(
+        ...,
+        example="What is artificial intelligence?",
+        description="User message to send to the AI assistant"
+    )
+    mode: Literal["rag", "sql"] = Field(
+        "rag",
+        example="rag",
+        description="Chat mode: 'rag' for knowledge-based chat or 'sql' for database queries"
+    )
+    context: Optional[Dict[str, Any]] = Field(
+        None,
+        example={"user_preference": "technical", "language": "en"},
+        description="Optional context object for additional information"
+    )
+
+class ChatModeResponse(BaseModel):
+    response: str = Field(
+        ...,
+        description="AI-generated response based on the selected mode"
+    )
+    mode: str = Field(
+        ...,
+        description="The mode used to generate this response"
+    )
+    session_id: str = Field(
+        ...,
+        description="The session ID for this conversation"
+    )
+    # Union type to support both RAG and SQL response fields
+    sql_query: Optional[str] = Field(
+        None,
+        description="Generated SQL query (only for SQL mode)"
+    )
+    query_results: Optional[List[Dict[str, Any]]] = Field(
+        None,
+        description="SQL query results (only for SQL mode)"
+    )
+    table_info: Optional[List[str]] = Field(
+        None,
+        description="Database tables referenced (only for SQL mode)"
+    )
+    validation_attempts: Optional[int] = Field(
+        None,
+        description="SQL validation attempts made (only for SQL mode)"
+    )
+    relevant_faqs: Optional[List[str]] = Field(
+        None,
+        description="Relevant FAQ questions (only for RAG mode)"
+    )
+    latency_ms: float = Field(
+        ...,
+        description="Response time in milliseconds"
+    )
+    token_usage: Dict[str, int] = Field(
+        ...,
+        description="Token usage statistics for the API call"
+    )
+    timestamp: datetime = Field(
+        default_factory=datetime.now,
+        description="Timestamp when the response was generated"
+    )
+    status: Optional[str] = Field(
+        None,
+        description="Status of the query processing (for SQL mode)"
+    )
+
+# Database schema information for SQL mode
+class DatabaseTable(BaseModel):
+    name: str
+    description: str
+    columns: List[Dict[str, str]]  # {name, type, description}
+    
+class DatabaseSchema(BaseModel):
+    tables: List[DatabaseTable]
+    relationships: List[Dict[str, str]]  # Foreign key relationships
